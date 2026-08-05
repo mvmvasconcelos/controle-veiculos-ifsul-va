@@ -1,0 +1,40 @@
+# Environment variables & Secrets
+.env
+.env.*
+credentials.json
+token.json
+*.pem
+*.key
+
+# SQLite Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/data/*.db
+backend/data/*.sqlite
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# Playwright & Browser Caches
+.cache/
+ms-playwright/
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Intermediate & Generated Log Files
+.tmp/
+*.log
+info.md

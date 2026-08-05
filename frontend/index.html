@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Controle de Veículos IFSul - Venâncio Aires</title>
+  <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-container">
+      <img src="public/logo-ifsul.svg" alt="IFSul Logo" class="brand-logo">
+      <div>
+        <div class="brand-title">Controle de Veículos</div>
+        <div class="brand-subtitle">IFSul - Câmpus Venâncio Aires</div>
+      </div>
+    </div>
+    <div id="user-header-badge" class="user-status-badge">
+      🔓 Visitante (Público)
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- TAB 1: DASHBOARD PÚBLICO -->
+    <section id="tab-dashboard" class="tab-content">
+      <div class="section-title">
+        <span>📊 Status dos Veículos em Tempo Real</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div id="metric-total" class="metric-value">5</div>
+          <div class="metric-label">Veículos Oficiais</div>
+        </div>
+        <div class="metric-card metric-available">
+          <div id="metric-available" class="metric-value">5</div>
+          <div class="metric-label">Disponíveis</div>
+        </div>
+        <div class="metric-card metric-inuse">
+          <div id="metric-inuse" class="metric-value">0</div>
+          <div class="metric-label">Em Trânsito</div>
+        </div>
+        <div class="metric-card">
+          <div id="metric-maintenance" class="metric-value">0</div>
+          <div class="metric-label">Manutenção</div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span>🚗 Frota de Veículos</span>
+      </div>
+
+      <div id="dashboard-vehicles-grid" class="vehicles-grid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="section-title">
+        <span>📍 Destinos Mais Frequentes</span>
+      </div>
+      <div class="table-container" style="padding: 16px; margin-bottom: 24px;">
+        <ul id="dashboard-destinations" style="list-style: none;">
+          <!-- Rendered dynamically -->
+        </ul>
+      </div>
+    </section>
+
+    <!-- TAB 2: PORTARIA / VIGILANTE -->
+    <section id="tab-portaria" class="tab-content" style="display: none;">
+      <div class="section-title">
+        <span>👮 Painel da Portaria - Registros</span>
+      </div>
+
+      <div id="portaria-vehicles-grid" class="vehicles-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: PAINEL ADMIN -->
+    <section id="tab-admin" class="tab-content" style="display: none;">
+      <div class="section-title">
+        <span>⚙️ Painel de Administração</span>
+        <button id="btn-export-csv" class="btn btn-primary" style="width: auto; min-height: 40px; padding: 6px 14px; font-size: 0.85rem;">
+          📥 Baixar Relatório (CSV)
+        </button>
+      </div>
+
+      <!-- Admin Sub-Navigation -->
+      <div class="admin-subnav" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto;">
+        <button class="btn-subnav active" data-subtab="vehicles">🚗 Veículos</button>
+        <button class="btn-subnav" data-subtab="drivers">👤 Motoristas</button>
+        <button class="btn-subnav" data-subtab="users">🔑 Usuários</button>
+        <button class="btn-subnav" data-subtab="movements">📋 Histórico</button>
+        <button class="btn-subnav" data-subtab="audit">📜 Auditoria</button>
+      </div>
+
+      <!-- ADMIN SUBTAB 1: VEÍCULOS -->
+      <div id="admin-subtab-vehicles" class="admin-subtab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 1rem;">Gestão de Veículos</h3>
+          <button id="btn-add-vehicle" class="btn btn-primary" style="width: auto; min-height: 36px; padding: 4px 12px; font-size: 0.85rem;">
+            ➕ Novo Veículo
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome / Placa</th>
+                <th>Tipo & Modelo</th>
+                <th>Odômetro</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="admin-vehicles-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 2: MOTORISTAS -->
+      <div id="admin-subtab-drivers" class="admin-subtab-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 1rem;">Gestão de Motoristas</h3>
+          <button id="btn-add-driver" class="btn btn-primary" style="width: auto; min-height: 36px; padding: 4px 12px; font-size: 0.85rem;">
+            ➕ Novo Motorista
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Setor/Curso</th>
+                <th>CNH</th>
+                <th>Tipo</th>
+                <th>Viagens</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="admin-drivers-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 3: USUÁRIOS -->
+      <div id="admin-subtab-users" class="admin-subtab-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 1rem;">Gestão de Usuários da Portaria & Admin</h3>
+          <button id="btn-add-user" class="btn btn-primary" style="width: auto; min-height: 36px; padding: 4px 12px; font-size: 0.85rem;">
+            ➕ Novo Usuário
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuário</th>
+                <th>Nome</th>
+                <th>Perfil</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 4: HISTÓRICO DE MOVIMENTAÇÕES -->
+      <div id="admin-subtab-movements" class="admin-subtab-content" style="display: none;">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Histórico Recente de Movimentações</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Veículo</th>
+                <th>Motorista</th>
+                <th>Destino</th>
+                <th>Saída</th>
+                <th>Retorno</th>
+                <th>KM Rodados</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="admin-movements-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+          <div class="pagination-container">
+            <span id="movements-page-info">Página 1 de 1</span>
+            <div class="pagination-controls">
+              <button id="btn-prev-movements" class="btn-pagination" disabled>◀ Anterior</button>
+              <button id="btn-next-movements" class="btn-pagination" disabled>Próxima ▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN SUBTAB 5: LOGS DE AUDITORIA -->
+      <div id="admin-subtab-audit" class="admin-subtab-content" style="display: none;">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Trilha de Auditoria e Operações do Sistema</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Data / Hora</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Recurso</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="admin-audit-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Mobile Navigation Bar -->
+  <nav class="mobile-nav">
+    <button class="nav-item active" data-tab="dashboard">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-tab="portaria">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4h14v4z"/></svg>
+      Portaria
+    </button>
+    <button id="nav-btn-admin" class="nav-item" data-tab="admin" style="display: none;">
+      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+      Admin
+    </button>
+    <button class="nav-item" data-tab="login">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span id="nav-login-text">Login</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: LOGIN -->
+  <div id="modal-login" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🔑 Acesso ao Sistema</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-login">
+        <div class="form-group">
+          <label class="form-label">Usuário</label>
+          <input type="text" id="login-username" class="form-input" placeholder="ex: portaria1, marcelo, vinicius" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Senha inicial: 123456" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR SAÍDA -->
+  <div id="modal-exit" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🚀 Registrar Saída de Veículo</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-exit">
+        <input type="hidden" id="exit-vehicle-id">
+        <div class="form-group">
+          <label class="form-label">Veículo Selecionado</label>
+          <div id="exit-vehicle-name" style="font-weight: 700; color: var(--ifsul-green); font-size: 1.1rem;"></div>
+        </div>
+        
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">Motorista</label>
+            <button type="button" id="btn-open-quick-driver" style="background: none; border: none; color: var(--ifsul-green); font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+              ➕ Adicionar na hora
+            </button>
+          </div>
+          <select id="exit-driver-id" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Destino</label>
+          <input type="text" id="exit-destination" class="form-input" placeholder="ex: Reitoria Pelotas, Centro Porto Alegre, Oficina" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Odômetro Atual (KM Saída)</label>
+          <input type="number" id="exit-odometer" class="form-input" required>
+          <div class="form-hint">Sugerida a última quilometragem registrada. Altere se necessário.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motivo / Observação (Opcional)</label>
+          <input type="text" id="exit-purpose" class="form-input" placeholder="ex: Reunião administrativa">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Confirmar Saída</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR RETORNO -->
+  <div id="modal-return" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🏁 Registrar Retorno de Veículo</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-return">
+        <input type="hidden" id="return-movement-id">
+        <div class="form-group">
+          <label class="form-label">Veículo Retornando</label>
+          <div id="return-vehicle-name" style="font-weight: 700; color: var(--ifsul-red); font-size: 1.1rem;"></div>
+          <div id="return-departure-info" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Odômetro de Retorno (KM Atual)</label>
+          <input type="number" id="return-odometer" class="form-input" required>
+          <div class="form-hint">Deve ser maior ou igual à quilometragem de saída. Alerta se for > 2.000 km.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações no Retorno (Opcional)</label>
+          <input type="text" id="return-notes" class="form-input" placeholder="ex: Sem avarias, combustível 3/4">
+        </div>
+
+        <button type="submit" class="btn btn-danger">Confirmar Retorno</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK ADD DRIVER -->
+  <div id="modal-quick-driver" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">👤 Cadastrar Novo Motorista</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-quick-driver">
+        <div class="form-group">
+          <label class="form-label">Nome Completo</label>
+          <input type="text" id="quick-driver-name" class="form-input" placeholder="ex: Pedro Alvares" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Setor / Curso</label>
+          <input type="text" id="quick-driver-department" class="form-input" placeholder="ex: Informática, Manutenção, Gabinete">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Classificação</label>
+          <select id="quick-driver-type" class="form-select">
+            <option value="eventual">Eventual</option>
+            <option value="frequente">Frequente</option>
+            <option value="fixo">Motorista Fixo/Oficial</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar e Selecionar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN: VEÍCULO (CRIAR / EDITAR) -->
+  <div id="modal-admin-vehicle" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-vehicle-title" class="modal-title">🚗 Cadastrar Veículo</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-admin-vehicle">
+        <input type="hidden" id="vehicle-edit-id">
+        <div class="form-group">
+          <label class="form-label">Nome de Exibição</label>
+          <input type="text" id="vehicle-display-name" class="form-input" placeholder="ex: Corolla Prata, Ônibus" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Placa</label>
+          <input type="text" id="vehicle-plate" class="form-input" placeholder="ex: IQK5148" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Tipo / Categoria</label>
+            <input type="text" id="vehicle-type" class="form-input" placeholder="Carro, Van, Ônibus" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input type="text" id="vehicle-make" class="form-input" placeholder="Toyota, Mercedes" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <input type="text" id="vehicle-model" class="form-input" placeholder="Corolla Gli, Sprinter" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cor</label>
+            <input type="text" id="vehicle-color" class="form-input" placeholder="Prata, Branca" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Combustível</label>
+            <input type="text" id="vehicle-fuel" class="form-input" placeholder="Alco/Gasol, Diesel" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Odômetro Atual (KM)</label>
+            <input type="number" id="vehicle-odometer" class="form-input" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Ano Fabricação</label>
+            <input type="number" id="vehicle-year-manuf" class="form-input" value="2010" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ano Modelo</label>
+            <input type="number" id="vehicle-year-model" class="form-input" value="2010" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Renavam (Opcional)</label>
+            <input type="text" id="vehicle-renavam" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chassi (Opcional)</label>
+            <input type="text" id="vehicle-chassis" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status Inicial / Atual</label>
+          <select id="vehicle-status" class="form-select">
+            <option value="disponivel">🟢 Disponível</option>
+            <option value="em_uso">🔴 Em Trânsito</option>
+            <option value="manutencao">🔧 Manutenção</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar Veículo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN: MOTORISTA (CRIAR / EDITAR) -->
+  <div id="modal-admin-driver" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-driver-title" class="modal-title">👤 Cadastrar Motorista</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-admin-driver">
+        <input type="hidden" id="driver-edit-id">
+        <div class="form-group">
+          <label class="form-label">Nome Completo</label>
+          <input type="text" id="driver-name" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Setor / Curso / Cargo</label>
+          <input type="text" id="driver-department" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número CNH (Opcional)</label>
+          <input type="text" id="driver-cnh" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Classificação do Motorista</label>
+          <select id="driver-type" class="form-select">
+            <option value="fixo">Motorista Fixo / Oficial</option>
+            <option value="frequente">Frequente</option>
+            <option value="eventual">Eventual</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar Motorista</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN: USUÁRIO (CRIAR / EDITAR) -->
+  <div id="modal-admin-user" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-user-title" class="modal-title">🔑 Cadastrar Usuário</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-admin-user">
+        <input type="hidden" id="user-edit-id">
+        <div class="form-group">
+          <label class="form-label">Nome de Usuário (Login)</label>
+          <input type="text" id="user-username" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome Exibido</label>
+          <input type="text" id="user-name" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Perfil / Função</label>
+          <select id="user-role" class="form-select">
+            <option value="portaria">Portaria / Vigilante</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha <span id="user-password-hint" style="font-weight: normal; color: var(--text-muted);">(obrigatória para novo usuário)</span></label>
+          <input type="password" id="user-password" class="form-input" placeholder="Digite a nova senha">
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN: MOVIMENTAÇÃO (EDITAR) -->
+  <div id="modal-admin-movement" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-movement-title" class="modal-title">📋 Editar Movimentação</div>
+        <button class="btn-close">&times;</button>
+      </div>
+      <form id="form-admin-movement">
+        <input type="hidden" id="movement-edit-id">
+        
+        <div class="form-group">
+          <label class="form-label">Veículo</label>
+          <select id="movement-vehicle-id" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motorista</label>
+          <select id="movement-driver-id" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Destino</label>
+          <input type="text" id="movement-destination" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motivo</label>
+          <input type="text" id="movement-purpose" class="form-input">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Odômetro Saída (KM)</label>
+            <input type="number" id="movement-departure-odometer" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Odômetro Retorno (KM)</label>
+            <input type="number" id="movement-return-odometer" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status da Movimentação</label>
+          <select id="movement-status" class="form-select">
+            <option value="em_transito">🔴 Em Trânsito</option>
+            <option value="concluido">🟢 Concluído</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <input type="text" id="movement-notes" class="form-input">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Movimentação</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js?v=1.0.1"></script>
+  <script src="js/app.js?v=1.0.1"></script>
+</body>
+</html>

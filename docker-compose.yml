@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: controle_veiculos_app
+    ports:
+      - "8096:8000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/controle_veiculos.db
+      - JWT_SECRET_KEY=ifsul_venancio_controle_veiculos_secret_key_2026
+      - ROOT_PATH=/controle-veiculos
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+      - ./frontend:/app/static
+    restart: unless-stopped
+
+  builder:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: controle_veiculos_builder
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite:////app/backend/data/controle_veiculos.db
+      - JWT_SECRET_KEY=ifsul_venancio_controle_veiculos_secret_key_2026
+      - PLAYWRIGHT_BROWSERS_PATH=/app/.cache/ms-playwright
+    working_dir: /app

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <!-- IFSul Signature 3x3 Grid -->
+  <rect x="10" y="10" width="12" height="12" rx="3" fill="#c62828"/>
+  <rect x="26" y="10" width="12" height="12" rx="3" fill="#006633"/>
+  <rect x="42" y="10" width="12" height="12" rx="3" fill="#006633"/>
+  
+  <rect x="10" y="26" width="12" height="12" rx="3" fill="#006633"/>
+  <rect x="26" y="26" width="12" height="12" rx="3" fill="#006633"/>
+  <rect x="42" y="26" width="12" height="12" rx="3" fill="#006633"/>
+  
+  <rect x="10" y="42" width="12" height="12" rx="3" fill="#006633"/>
+  <rect x="26" y="42" width="12" height="12" rx="3" fill="#006633"/>
+  
+  <!-- Vehicle Silhouette Icon in place of 9th square -->
+  <path d="M41 43c.8-.8 1.4-1.2 2.5-1.2h4.5c1.1 0 1.7.4 2.5 1.2l1.5 2.8h2c.8 0 1.5.7 1.5 1.5v3.5h-16v-3.5c0-.8.7-1.5 1.5-1.5h2l1.5-2.8z" fill="#006633"/>
+  <circle cx="43.5" cy="51.5" r="1.5" fill="#ffffff"/>
+  <circle cx="52.5" cy="51.5" r="1.5" fill="#ffffff"/>
+</svg>
