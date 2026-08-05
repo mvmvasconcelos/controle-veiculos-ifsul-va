@@ -27,7 +27,7 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 ## Operating Principles
 
 **0. Container first**
-Avoid running scripts and installing anything on local. Prioratize using the docker container.
+Avoid running scripts and installing anything on local. Prioritize using the docker container. (Exceção: Comandos `git` podem ser executados diretamente no host para evitar complexidade desnecessária de permissões).
 
 **1. Check for tools first**
 Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
