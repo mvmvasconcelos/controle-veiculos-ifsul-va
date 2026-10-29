@@ -30,3 +30,13 @@ services:
       - JWT_SECRET_KEY=ifsul_venancio_controle_veiculos_secret_key_2026
       - PLAYWRIGHT_BROWSERS_PATH=/app/.cache/ms-playwright
     working_dir: /app
+
+  frontend-tests:
+    image: node:22-alpine
+    profiles:
+      - test
+    working_dir: /workspace
+    volumes:
+      - ./frontend:/workspace/frontend:ro
+      - ./tests/frontend:/workspace/tests/frontend:ro
+    command: ["node", "--test", "tests/frontend/portaria-vehicle-state.test.js"]

@@ -44,3 +44,11 @@ Sistema desenvolvido para substituir o registro manual em papel e planilhas na p
 3. O serviço estará acessível nos seguintes endereços:
    - Acesso local: http://localhost:8096
    - Acesso em produção (proxy reverso Nginx): https://ifva.duckdns.org/controle-veiculos/
+
+## Testes do frontend
+
+Execute os testes das regras de estado usadas pela Portaria em um container Node isolado:
+
+```bash
+docker compose run --rm frontend-tests
+```

@@ -605,7 +605,11 @@ const App = {
     }
 
     matches.forEach(v => {
-      const canExit = v.status === 'disponivel';
+      const state = PortariaVehicleState.getPortariaVehicleState(
+        v.status,
+        Boolean(this.activeMovementsMap[v.id])
+      );
+      const canExit = state.canStartMovement;
       const card = document.createElement('div');
       card.className = `vehicle-option status-${v.status}${canExit ? '' : ' is-disabled'}`;
 
