@@ -36,6 +36,30 @@ def test_reason_is_hidden_from_public_and_visible_to_staff(client, admin, guard,
     assert client.get("/api/v1/vehicles/staff", headers=guard).json()[0]["unavailable_reason"] == "Evento"
 
 
+def test_dashboard_hides_driver_name_from_public_and_shows_it_to_logged_in_users(client, guard, vehicle):
+    movement = start_exit(client, guard, vehicle).json()
+
+    public = client.get("/api/v1/dashboard/summary").json()
+    logged_in = client.get("/api/v1/dashboard/summary", headers=guard).json()
+
+    public_active = next(m for m in public["active_movements"] if m["id"] == movement["id"])
+    logged_active = next(m for m in logged_in["active_movements"] if m["id"] == movement["id"])
+    assert "driver" not in public_active
+    assert logged_active["driver"]["name"] == "Motorista"
+
+    client.post(
+        f"/api/v1/movements/{movement['id']}/return",
+        headers=guard,
+        json={"return_odometer": 1010},
+    )
+    public_completed = client.get("/api/v1/dashboard/summary").json()["recent_trips"][0]
+    logged_completed = client.get(
+        "/api/v1/dashboard/summary", headers=guard
+    ).json()["recent_trips"][0]
+    assert "driver" not in public_completed
+    assert logged_completed["driver"]["name"] == "Motorista"
+
+
 def test_reason_validation(client, admin, vehicle):
     assert put_vehicle(client, admin, vehicle, status="indisponivel", unavailable_reason="x" * 201).status_code == 422
     assert put_vehicle(client, admin, vehicle, status="manutencao", unavailable_reason="Motivo").status_code == 400

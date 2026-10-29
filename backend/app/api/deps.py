@@ -6,12 +6,15 @@ from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User, UserRole
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
-def get_current_user(
+def get_optional_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
-) -> User:
+    token: str | None = Depends(optional_oauth2_scheme)
+) -> User | None:
+    if token is None:
+        return None
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciais inválidas ou sessão expirada",
@@ -23,11 +26,27 @@ def get_current_user(
     user_id: str = payload.get("sub")
     if user_id is None:
         raise credentials_exception
-    
-    user = db.query(User).filter(User.id == int(user_id)).first()
+
+    try:
+        user = db.query(User).filter(User.id == int(user_id)).first()
+    except (TypeError, ValueError):
+        raise credentials_exception
     if user is None or not user.is_active:
         raise credentials_exception
     return user
+
+
+def get_current_user(
+    current_user: User | None = Depends(get_optional_current_user)
+) -> User:
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais inválidas ou sessão expirada",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return current_user
+
 
 def get_current_portaria_user(
     current_user: User = Depends(get_current_user)

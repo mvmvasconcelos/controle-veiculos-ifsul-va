@@ -8,7 +8,7 @@ Sistema desenvolvido para substituir o registro manual em papel e planilhas na p
 
 ### Dashboard Público
 - Exibe o status da frota em tempo real (Disponível, Em Trânsito, Indisponível ou Em manutenção), sem expor o motivo de indisponibilidade.
-- Mostra quais veículos estão fora do câmpus, com informações sobre o motorista, destino e horário de saída.
+- Mostra quais veículos estão fora do câmpus, com destino e horário de saída; o nome do motorista é exibido apenas para usuários autenticados.
 - Lista os destinos mais frequentes e estatísticas gerais da frota sem exigir autenticação.
 
 ### Painel da Portaria

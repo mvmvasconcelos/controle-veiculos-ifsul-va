@@ -420,6 +420,17 @@ const App = {
     return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   },
 
+  formatDashboardDeparture(value) {
+    const departure = new Date(value);
+    const date = departure.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const time = departure.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).replace(':', '-');
+    return `${date} - ${time}`;
+  },
+
   // -------------------------------------------------------------
   // TAB 1: DASHBOARD PÚBLICO
   // -------------------------------------------------------------
@@ -502,7 +513,7 @@ const App = {
       if (activeTrip) {
         const tripBox = document.createElement('div');
         tripBox.className = 'active-trip-info';
-        tripBox.textContent = `Em viagem para ${activeTrip.destination} desde ${this.formatTime(activeTrip.departure_time)}`;
+        tripBox.textContent = `Em trânsito. Destino: ${activeTrip.destination}. Horário: ${this.formatDashboardDeparture(activeTrip.departure_time)}`;
         card.appendChild(tripBox);
       }
 
@@ -539,11 +550,15 @@ const App = {
     meta.className = 'trip-meta';
     const dest = document.createElement('div');
     dest.textContent = `Destino: ${movement.destination}`;
-    const drv = document.createElement('div');
-    drv.textContent = `Motorista: ${movement.driver ? movement.driver.name : 'N/A'}`;
     const dep = document.createElement('div');
     dep.textContent = `Saída: ${new Date(movement.departure_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`;
-    meta.append(dest, drv, dep);
+    meta.append(dest);
+    if (this.currentUser && movement.driver) {
+      const drv = document.createElement('div');
+      drv.textContent = `Motorista: ${movement.driver.name}`;
+      meta.appendChild(drv);
+    }
+    meta.appendChild(dep);
     card.appendChild(meta);
 
     if (onReturn) {
@@ -617,6 +632,9 @@ const App = {
       head.className = 'vehicle-option-head';
       head.appendChild(this.createVehicleTitle(v));
       head.appendChild(this.createStatusBadge(v.status));
+      if (state.showTransitBadge) {
+        head.appendChild(this.createStatusBadge('em_uso'));
+      }
       card.appendChild(head);
 
       const meta = document.createElement('div');

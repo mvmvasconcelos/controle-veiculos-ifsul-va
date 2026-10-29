@@ -5,13 +5,18 @@ from sqlalchemy import func
 from app.core.database import get_db
 from app.models.vehicle import Vehicle, VehicleStatus
 from app.models.movement import Movement, MovementStatus
+from app.models.user import User
 from app.schemas.vehicle import VehicleOut
 from app.schemas.movement import MovementOut
+from app.api.deps import get_optional_current_user
 
 router = APIRouter()
 
 @router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def get_dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user)
+) -> Dict[str, Any]:
     vehicles = db.query(Vehicle).order_by(Vehicle.id.asc()).all()
     
     total_vehicles = len(vehicles)
@@ -29,6 +34,12 @@ def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
     
     # In transit describes open movements, independent of the vehicle's state for next exits
     in_use_count = len(active_movements)
+
+    def serialize_movement(movement: Movement) -> Dict[str, Any]:
+        result = MovementOut.model_validate(movement).model_dump()
+        if current_user is None:
+            result.pop("driver", None)
+        return result
 
     # Common destinations (top 5)
     common_destinations = (
@@ -58,7 +69,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
             "unavailable_count": unavailable_count,
         },
         "vehicles": [VehicleOut.model_validate(v) for v in vehicles],
-        "active_movements": [MovementOut.model_validate(m) for m in active_movements],
+        "active_movements": [serialize_movement(m) for m in active_movements],
         "common_destinations": destinations_list,
-        "recent_trips": [MovementOut.model_validate(m) for m in recent_trips]
+        "recent_trips": [serialize_movement(m) for m in recent_trips]
     }
