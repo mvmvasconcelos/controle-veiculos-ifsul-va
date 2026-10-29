@@ -42,7 +42,7 @@ Before writing a script, check `execution/` per your directive. Only create new 
 Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
 
 ## Automated Testing & Playwright MCP
-- The **Playwright MCP server** (`@playwright/mcp@latest`) is configured and available in the environment via `mcp_config.json`.
+- The **Playwright MCP server** (`@playwright/mcp@latest`) is configured for this workspace in `.vscode/mcp.json`.
 - Use Playwright MCP tools and automated browser capabilities for UI testing, E2E flow validation, and browser automation tasks.
 
 ## Self-annealing loop
@@ -74,3 +74,17 @@ Errors are learning opportunities. When something breaks:
 You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
 
 Be pragmatic. Be reliable. Self-anneal.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs for this repository live in GitHub Issues; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default triage labels configured in `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository; use the root `GLOSSARY.md` and `docs/adr/` when present. See `docs/agents/domain.md`.
