@@ -36,6 +36,23 @@ body {
   padding-bottom: 70px; /* Space for mobile navigation bar */
 }
 
+.development-ribbon {
+  position: fixed;
+  top: 64px;
+  left: -64px;
+  z-index: 150;
+  width: 205px;
+  padding: 6px 0;
+  transform: rotate(-45deg);
+  background: var(--ifsul-amber);
+  box-shadow: var(--shadow-md);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+
 /* Header */
 .app-header {
   background: var(--card-bg);
