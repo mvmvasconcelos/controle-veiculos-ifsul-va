@@ -95,6 +95,14 @@ const App = {
       });
     });
 
+    document.getElementById('portaria-search').addEventListener('input', () => {
+      this.renderPortariaVehicles();
+    });
+
+    document.getElementById('vehicle-status').addEventListener('change', () => {
+      this.updateVehicleReasonVisibility();
+    });
+
     // Admin Subnav Clicks
     document.querySelectorAll('.btn-subnav').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -345,244 +353,311 @@ const App = {
   },
 
   // -------------------------------------------------------------
+  // SHARED UI HELPERS
+  // -------------------------------------------------------------
+  STATUS_LABELS: {
+    disponivel: 'Disponível',
+    em_uso: 'Em Trânsito',
+    manutencao: 'Em manutenção',
+    indisponivel: 'Indisponível'
+  },
+
+  createStatusBadge(status, label = null) {
+    const badge = document.createElement('span');
+    badge.className = `badge badge-${status}`;
+    badge.textContent = label || this.STATUS_LABELS[status] || status;
+    return badge;
+  },
+
+  // Badges for a vehicle: its state for next exits plus, if applicable, the open movement
+  createVehicleBadges(vehicle, activeTrip) {
+    const row = document.createElement('div');
+    row.className = 'badge-row';
+    row.appendChild(this.createStatusBadge(vehicle.status));
+    if (activeTrip && vehicle.status !== 'em_uso') {
+      row.appendChild(this.createStatusBadge('em_uso', 'Em Trânsito'));
+    }
+    return row;
+  },
+
+  createStateBox(message, kind = 'empty', onRetry = null) {
+    const box = document.createElement('div');
+    box.className = `state-box${kind === 'error' ? ' state-error' : ''}`;
+    box.textContent = message;
+    if (onRetry) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary';
+      btn.textContent = 'Tentar novamente';
+      btn.addEventListener('click', onRetry);
+      box.appendChild(btn);
+    }
+    return box;
+  },
+
+  setFeedback(id, message = null, kind = 'error') {
+    const el = document.getElementById(id);
+    el.replaceChildren();
+    if (message) {
+      el.appendChild(this.createStateBox(message, kind, () => this.loadCurrentTabData()));
+    }
+  },
+
+  createVehicleTitle(vehicle) {
+    const titleBox = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'vehicle-title';
+    title.textContent = vehicle.display_name;
+    const plate = document.createElement('span');
+    plate.className = 'vehicle-plate';
+    plate.textContent = vehicle.plate;
+    titleBox.appendChild(title);
+    titleBox.appendChild(plate);
+    return titleBox;
+  },
+
+  formatTime(value) {
+    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  },
+
+  // -------------------------------------------------------------
   // TAB 1: DASHBOARD PÚBLICO
   // -------------------------------------------------------------
   async renderDashboard() {
+    const grid = document.getElementById('dashboard-vehicles-grid');
+    if (!this.dashboardData) {
+      grid.replaceChildren(this.createStateBox('Carregando veículos...'));
+    }
+
+    let data;
     try {
-      const data = await API.getDashboardSummary();
-      this.dashboardData = data;
-      this.vehicles = data.vehicles;
-
-      // Update metrics
-      document.getElementById('metric-total').textContent = data.metrics.total_vehicles;
-      document.getElementById('metric-available').textContent = data.metrics.available_count;
-      document.getElementById('metric-inuse').textContent = data.metrics.in_use_count;
-      document.getElementById('metric-maintenance').textContent = data.metrics.maintenance_count;
-
-      // Render Vehicles Cards safely
-      const container = document.getElementById('dashboard-vehicles-grid');
-      container.replaceChildren();
-
-      data.vehicles.forEach(v => {
-        const activeTrip = data.active_movements.find(m => m.vehicle_id === v.id);
-
-        const card = document.createElement('div');
-        card.className = `vehicle-card status-${v.status}`;
-
-        // Header
-        const header = document.createElement('div');
-        header.className = 'vehicle-header';
-        
-        const titleBox = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'vehicle-title';
-        title.textContent = v.display_name;
-        
-        const plate = document.createElement('span');
-        plate.className = 'vehicle-plate';
-        plate.textContent = v.plate;
-        
-        titleBox.appendChild(title);
-        titleBox.appendChild(plate);
-
-        const badge = document.createElement('span');
-        badge.className = `badge badge-${v.status}`;
-        badge.textContent = v.status === 'disponivel' ? 'Disponível' : (v.status === 'em_uso' ? 'Em Trânsito' : 'Manutenção');
-
-        header.appendChild(titleBox);
-        header.appendChild(badge);
-        card.appendChild(header);
-
-        // Details
-        const details = document.createElement('div');
-        details.className = 'vehicle-details';
-
-        const row1 = document.createElement('div');
-        row1.className = 'vehicle-meta-row';
-        const span1 = document.createElement('span');
-        span1.textContent = `Modelo: ${v.make} ${v.model}`;
-        row1.appendChild(span1);
-        
-        const row2 = document.createElement('div');
-        row2.className = 'vehicle-meta-row';
-        const span2a = document.createElement('span');
-        span2a.textContent = `Odômetro: ${v.current_odometer.toLocaleString()} km`;
-        const span2b = document.createElement('span');
-        span2b.textContent = `Comb: ${v.fuel}`;
-        row2.appendChild(span2a);
-        row2.appendChild(span2b);
-
-        details.appendChild(row1);
-        details.appendChild(row2);
-        card.appendChild(details);
-
-        // Active Trip Info
-        if (activeTrip) {
-          const tripBox = document.createElement('div');
-          tripBox.className = 'active-trip-info';
-          
-          const tDriver = document.createElement('div');
-          tDriver.textContent = `👤 Motorista: ${activeTrip.driver ? activeTrip.driver.name : 'N/A'}`;
-          
-          const tDest = document.createElement('div');
-          tDest.textContent = `📍 Destino: ${activeTrip.destination}`;
-          
-          const depTime = new Date(activeTrip.departure_time);
-          const tTime = document.createElement('div');
-          tTime.textContent = `🕒 Saída: ${depTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-
-          tripBox.appendChild(tDriver);
-          tripBox.appendChild(tDest);
-          tripBox.appendChild(tTime);
-          card.appendChild(tripBox);
-        }
-
-        container.appendChild(card);
-      });
-
-      // Render Common Destinations safely
-      const destList = document.getElementById('dashboard-destinations');
-      destList.replaceChildren();
-      if (data.common_destinations.length === 0) {
-        const empty = document.createElement('li');
-        empty.textContent = 'Nenhuma movimentação registrada ainda.';
-        destList.appendChild(empty);
-      } else {
-        data.common_destinations.forEach(d => {
-          const li = document.createElement('li');
-          li.style.padding = '6px 0';
-          li.style.borderBottom = '1px solid #f0f0f0';
-          li.textContent = `📍 ${d.destination} (${d.count} viagens)`;
-          destList.appendChild(li);
-        });
-      }
-
+      data = await API.getDashboardSummary();
     } catch (err) {
       console.error('Error rendering dashboard:', err);
+      this.setFeedback('dashboard-feedback', `Não foi possível carregar o painel: ${err.message}`);
+      if (!this.dashboardData) grid.replaceChildren();
+      return;
     }
+
+    this.setFeedback('dashboard-feedback');
+    this.dashboardData = data;
+    this.vehicles = data.vehicles;
+
+    document.getElementById('metric-total').textContent = data.metrics.total_vehicles;
+    document.getElementById('metric-available').textContent = data.metrics.available_count;
+    document.getElementById('metric-inuse').textContent = data.metrics.in_use_count;
+    document.getElementById('metric-unavailable').textContent = data.metrics.unavailable_count;
+    document.getElementById('metric-maintenance').textContent = data.metrics.maintenance_count;
+
+    // Active movements list
+    const activeList = document.getElementById('dashboard-active-list');
+    activeList.replaceChildren();
+    if (data.active_movements.length === 0) {
+      activeList.appendChild(this.createStateBox('Nenhum veículo em trânsito no momento.'));
+    } else {
+      data.active_movements.forEach(m => {
+        activeList.appendChild(this.createTripCard(m, { vehicle: m.vehicle }));
+      });
+    }
+
+    // Fleet cards
+    grid.replaceChildren();
+    if (data.vehicles.length === 0) {
+      grid.appendChild(this.createStateBox('Nenhum veículo cadastrado.'));
+    }
+    data.vehicles.forEach(v => {
+      const activeTrip = data.active_movements.find(m => m.vehicle_id === v.id);
+
+      const card = document.createElement('div');
+      card.className = `vehicle-card status-${v.status}`;
+
+      const header = document.createElement('div');
+      header.className = 'vehicle-header';
+      header.appendChild(this.createVehicleTitle(v));
+      header.appendChild(this.createVehicleBadges(v, activeTrip));
+      card.appendChild(header);
+
+      const details = document.createElement('div');
+      details.className = 'vehicle-details';
+
+      const row1 = document.createElement('div');
+      row1.className = 'vehicle-meta-row';
+      const span1 = document.createElement('span');
+      span1.textContent = `Modelo: ${v.make} ${v.model}`;
+      row1.appendChild(span1);
+
+      const row2 = document.createElement('div');
+      row2.className = 'vehicle-meta-row';
+      const span2a = document.createElement('span');
+      span2a.textContent = `Odômetro: ${v.current_odometer.toLocaleString()} km`;
+      const span2b = document.createElement('span');
+      span2b.textContent = `Comb: ${v.fuel}`;
+      row2.appendChild(span2a);
+      row2.appendChild(span2b);
+
+      details.appendChild(row1);
+      details.appendChild(row2);
+      card.appendChild(details);
+
+      if (activeTrip) {
+        const tripBox = document.createElement('div');
+        tripBox.className = 'active-trip-info';
+        tripBox.textContent = `Em viagem para ${activeTrip.destination} desde ${this.formatTime(activeTrip.departure_time)}`;
+        card.appendChild(tripBox);
+      }
+
+      grid.appendChild(card);
+    });
+
+    const destList = document.getElementById('dashboard-destinations');
+    destList.replaceChildren();
+    if (data.common_destinations.length === 0) {
+      const empty = document.createElement('li');
+      empty.textContent = 'Nenhuma movimentação registrada ainda.';
+      destList.appendChild(empty);
+    } else {
+      data.common_destinations.forEach(d => {
+        const li = document.createElement('li');
+        li.textContent = `${d.destination} (${d.count} viagens)`;
+        destList.appendChild(li);
+      });
+    }
+  },
+
+  // Card for an open movement; used by the public dashboard and the Portaria return queue
+  createTripCard(movement, { vehicle, onReturn = null }) {
+    const card = document.createElement('div');
+    card.className = 'trip-card';
+
+    const head = document.createElement('div');
+    head.className = 'trip-card-head';
+    head.appendChild(this.createVehicleTitle(vehicle));
+    head.appendChild(this.createVehicleBadges(vehicle, movement));
+    card.appendChild(head);
+
+    const meta = document.createElement('div');
+    meta.className = 'trip-meta';
+    const dest = document.createElement('div');
+    dest.textContent = `Destino: ${movement.destination}`;
+    const drv = document.createElement('div');
+    drv.textContent = `Motorista: ${movement.driver ? movement.driver.name : 'N/A'}`;
+    const dep = document.createElement('div');
+    dep.textContent = `Saída: ${new Date(movement.departure_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`;
+    meta.append(dest, drv, dep);
+    card.appendChild(meta);
+
+    if (onReturn) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-danger';
+      btn.textContent = '🏁 Registrar Retorno';
+      btn.addEventListener('click', onReturn);
+      card.appendChild(btn);
+    }
+    return card;
   },
 
   // -------------------------------------------------------------
   // TAB 2: PORTARIA / VIGILANTE
   // -------------------------------------------------------------
   async renderPortaria() {
-    try {
-      this.vehicles = await API.getVehicles();
-      const activeMovements = await API.getMovements({ status: 'em_transito' });
-      this.drivers = await API.getDrivers();
-      const isAdmin = this.currentUser && this.currentUser.role === 'admin';
+    const grid = document.getElementById('portaria-vehicles-grid');
+    if (this.vehicles.length === 0) {
+      grid.replaceChildren(this.createStateBox('Carregando veículos...'));
+    }
 
+    try {
+      const [vehicles, activeMovements, drivers] = await Promise.all([
+        API.getStaffVehicles(),
+        API.getMovements({ status: 'em_transito' }),
+        API.getDrivers()
+      ]);
+      this.vehicles = vehicles;
+      this.drivers = drivers;
       this.activeMovementsMap = {};
       activeMovements.forEach(m => {
         this.activeMovementsMap[m.vehicle_id] = m;
       });
-
-      const container = document.getElementById('portaria-vehicles-grid');
-      container.replaceChildren();
-
-      this.vehicles.forEach(v => {
-        const activeTrip = this.activeMovementsMap[v.id];
-
-        const card = document.createElement('div');
-        card.className = `vehicle-card status-${v.status}`;
-
-        // Header
-        const header = document.createElement('div');
-        header.className = 'vehicle-header';
-        
-        const titleBox = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'vehicle-title';
-        title.textContent = v.display_name;
-        
-        const plate = document.createElement('span');
-        plate.className = 'vehicle-plate';
-        plate.textContent = v.plate;
-        
-        titleBox.appendChild(title);
-        titleBox.appendChild(plate);
-
-        const badge = document.createElement('span');
-        badge.className = `badge badge-${v.status}`;
-        badge.textContent = v.status === 'disponivel' ? 'Disponível' : (v.status === 'em_uso' ? 'Em Trânsito' : 'Manutenção');
-
-        header.appendChild(titleBox);
-        header.appendChild(badge);
-        card.appendChild(header);
-
-        // Meta info
-        const meta = document.createElement('div');
-        meta.className = 'vehicle-details';
-        meta.textContent = `Odômetro Atual: ${v.current_odometer.toLocaleString()} km | ${v.type}`;
-        card.appendChild(meta);
-
-        // Action Buttons Box
-        const btnBox = document.createElement('div');
-        btnBox.style.display = 'flex';
-        btnBox.style.flexDirection = 'column';
-        btnBox.style.gap = '8px';
-
-        if (v.status === 'disponivel') {
-          const btnExit = document.createElement('button');
-          btnExit.className = 'btn btn-primary';
-          btnExit.textContent = '🚀 Registrar Saída';
-          btnExit.addEventListener('click', () => this.openExitModal(v));
-          btnBox.appendChild(btnExit);
-
-          // Maintenance button ONLY for Admin
-          if (isAdmin) {
-            const btnMaint = document.createElement('button');
-            btnMaint.className = 'btn btn-warning btn-sm';
-            btnMaint.textContent = '🔧 Colocar em Manutenção (Admin)';
-            btnMaint.addEventListener('click', async () => {
-              if (confirm(`Colocar o veículo '${v.display_name}' em manutenção?`)) {
-                await API.updateVehicle(v.id, { status: 'manutencao' });
-                this.showToast(`Veículo ${v.display_name} marcado como em manutenção`);
-                this.loadCurrentTabData();
-              }
-            });
-            btnBox.appendChild(btnMaint);
-          }
-        } else if (v.status === 'em_uso' && activeTrip) {
-          const tripBox = document.createElement('div');
-          tripBox.className = 'active-trip-info';
-          tripBox.textContent = `Fora com ${activeTrip.driver ? activeTrip.driver.name : 'Motorista'} para ${activeTrip.destination}`;
-          card.appendChild(tripBox);
-
-          const btnReturn = document.createElement('button');
-          btnReturn.className = 'btn btn-danger';
-          btnReturn.textContent = '🏁 Registrar Retorno';
-          btnReturn.addEventListener('click', () => this.openReturnModal(v, activeTrip));
-          btnBox.appendChild(btnReturn);
-        } else if (v.status === 'manutencao') {
-          if (isAdmin) {
-            const btnUnmaint = document.createElement('button');
-            btnUnmaint.className = 'btn btn-primary btn-sm';
-            btnUnmaint.textContent = '🟢 Retornar para Disponível (Admin)';
-            btnUnmaint.addEventListener('click', async () => {
-              if (confirm(`Disponibilizar o veículo '${v.display_name}' novamente?`)) {
-                await API.updateVehicle(v.id, { status: 'disponivel' });
-                this.showToast(`Veículo ${v.display_name} disponibilizado!`);
-                this.loadCurrentTabData();
-              }
-            });
-            btnBox.appendChild(btnUnmaint);
-          } else {
-            const btnDisabled = document.createElement('button');
-            btnDisabled.className = 'btn btn-secondary';
-            btnDisabled.disabled = true;
-            btnDisabled.textContent = '🔧 Em Manutenção (Indisponível)';
-            btnBox.appendChild(btnDisabled);
-          }
-        }
-
-        card.appendChild(btnBox);
-        container.appendChild(card);
-      });
-
     } catch (err) {
       console.error('Error rendering portaria:', err);
+      this.setFeedback('portaria-feedback', `Não foi possível carregar a portaria: ${err.message}`);
+      if (this.vehicles.length === 0) grid.replaceChildren();
+      return;
     }
+
+    this.setFeedback('portaria-feedback');
+    this.renderPortariaVehicles();
+    this.renderPortariaReturns();
+  },
+
+  renderPortariaVehicles() {
+    const container = document.getElementById('portaria-vehicles-grid');
+    container.replaceChildren();
+
+    const term = document.getElementById('portaria-search').value.trim().toLowerCase();
+    const matches = this.vehicles.filter(v =>
+      !term || `${v.display_name} ${v.plate} ${v.make} ${v.model}`.toLowerCase().includes(term)
+    );
+
+    if (matches.length === 0) {
+      container.appendChild(this.createStateBox(term ? 'Nenhum veículo encontrado para a busca.' : 'Nenhum veículo cadastrado.'));
+      return;
+    }
+
+    matches.forEach(v => {
+      const canExit = v.status === 'disponivel';
+      const card = document.createElement('div');
+      card.className = `vehicle-option status-${v.status}${canExit ? '' : ' is-disabled'}`;
+
+      const head = document.createElement('div');
+      head.className = 'vehicle-option-head';
+      head.appendChild(this.createVehicleTitle(v));
+      head.appendChild(this.createStatusBadge(v.status));
+      card.appendChild(head);
+
+      const meta = document.createElement('div');
+      meta.className = 'vehicle-option-note';
+      meta.textContent = `${v.type} • ${v.current_odometer.toLocaleString()} km`;
+      card.appendChild(meta);
+
+      if (v.status === 'indisponivel' && v.unavailable_reason) {
+        const reason = document.createElement('div');
+        reason.className = 'vehicle-option-note';
+        reason.textContent = `Motivo: ${v.unavailable_reason}`;
+        card.appendChild(reason);
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-primary';
+      if (canExit) {
+        btn.textContent = '🚀 Registrar Saída';
+        btn.addEventListener('click', () => this.openExitModal(v));
+      } else {
+        btn.disabled = true;
+        btn.className = 'btn btn-secondary';
+        btn.textContent = `${this.STATUS_LABELS[v.status]} - saída bloqueada`;
+      }
+      card.appendChild(btn);
+      container.appendChild(card);
+    });
+  },
+
+  renderPortariaReturns() {
+    const list = document.getElementById('portaria-returns-list');
+    list.replaceChildren();
+
+    const trips = Object.values(this.activeMovementsMap)
+      .sort((a, b) => new Date(b.departure_time) - new Date(a.departure_time));
+    if (trips.length === 0) {
+      list.appendChild(this.createStateBox('Nenhum retorno pendente.'));
+      return;
+    }
+
+    trips.forEach(m => {
+      const vehicle = this.vehicles.find(v => v.id === m.vehicle_id) || m.vehicle;
+      list.appendChild(this.createTripCard(m, { vehicle, onReturn: () => this.openReturnModal(vehicle, m) }));
+    });
   },
 
   async reloadDriversDropdown() {
@@ -633,10 +708,13 @@ const App = {
   // -------------------------------------------------------------
   async renderAdmin() {
     try {
-      this.vehicles = await API.getVehicles();
+      this.vehicles = await API.getStaffVehicles();
       this.drivers = await API.getDrivers();
       this.users = await API.getUsers();
       this.movements = await API.getMovements({ limit: 50 });
+      const activeMovements = await API.getMovements({ status: 'em_transito' });
+      const activeVehicleIds = new Set(activeMovements.map(m => m.vehicle_id));
+      this.setFeedback('admin-feedback');
 
       // 1. Render Admin Vehicles Table
       const vehTbody = document.getElementById('admin-vehicles-tbody');
@@ -666,31 +744,42 @@ const App = {
         tdOdo.textContent = `${v.current_odometer.toLocaleString()} km`;
 
         const tdStatus = document.createElement('td');
-        const badge = document.createElement('span');
-        badge.className = `badge badge-${v.status}`;
-        badge.textContent = v.status === 'disponivel' ? 'Disponível' : (v.status === 'em_uso' ? 'Em Trânsito' : 'Manutenção');
-        tdStatus.appendChild(badge);
+        tdStatus.appendChild(this.createVehicleBadges(v, activeVehicleIds.has(v.id)));
+        if (v.status === 'indisponivel' && v.unavailable_reason) {
+          const reason = document.createElement('span');
+          reason.className = 'reason-text';
+          reason.textContent = `Motivo: ${v.unavailable_reason}`;
+          tdStatus.appendChild(reason);
+        }
 
         const tdActions = document.createElement('td');
-        tdActions.style.display = 'flex';
-        tdActions.style.gap = '6px';
+        const actionsBox = document.createElement('div');
+        actionsBox.className = 'actions-cell';
+        tdActions.appendChild(actionsBox);
 
         const btnEdit = document.createElement('button');
         btnEdit.className = 'btn btn-secondary btn-sm';
         btnEdit.textContent = '✏️ Editar';
         btnEdit.addEventListener('click', () => this.openVehicleModal(v));
-        tdActions.appendChild(btnEdit);
+        actionsBox.appendChild(btnEdit);
 
-        const btnMaint = document.createElement('button');
-        btnMaint.className = `btn ${v.status === 'manutencao' ? 'btn-primary' : 'btn-warning'} btn-sm`;
-        btnMaint.textContent = v.status === 'manutencao' ? '🟢 Liberar' : '🔧 Manutenção';
-        btnMaint.addEventListener('click', async () => {
-          const newStatus = v.status === 'manutencao' ? 'disponivel' : 'manutencao';
-          await API.updateVehicle(v.id, { status: newStatus });
-          this.showToast(`Status do veículo '${v.display_name}' atualizado!`);
-          this.renderAdmin();
-        });
-        tdActions.appendChild(btnMaint);
+        // Indisponível is released through the vehicle editor, where ADMIN chooses the next state
+        if (v.status !== 'indisponivel') {
+          const btnMaint = document.createElement('button');
+          btnMaint.className = `btn ${v.status === 'manutencao' ? 'btn-primary' : 'btn-warning'} btn-sm`;
+          btnMaint.textContent = v.status === 'manutencao' ? '🟢 Liberar' : '🔧 Manutenção';
+          btnMaint.addEventListener('click', async () => {
+            const newStatus = v.status === 'manutencao' ? 'disponivel' : 'manutencao';
+            try {
+              await API.updateVehicle(v.id, { status: newStatus });
+              this.showToast(`Status do veículo '${v.display_name}' atualizado!`);
+              this.renderAdmin();
+            } catch (err) {
+              this.showToast(err.message, 'error');
+            }
+          });
+          actionsBox.appendChild(btnMaint);
+        }
 
         const btnDel = document.createElement('button');
         btnDel.className = 'btn btn-danger btn-sm';
@@ -706,7 +795,7 @@ const App = {
             }
           }
         });
-        tdActions.appendChild(btnDel);
+        actionsBox.appendChild(btnDel);
 
         tr.appendChild(tdId);
         tr.appendChild(tdName);
@@ -912,7 +1001,7 @@ const App = {
         const tdStatus = document.createElement('td');
         const statusBadge = document.createElement('span');
         statusBadge.className = `badge badge-${m.status}`;
-        statusBadge.textContent = m.status === 'em_transito' ? 'FORA' : 'CONCLUÍDO';
+        statusBadge.textContent = m.status === 'em_transito' ? 'Em Trânsito' : 'Concluído';
         tdStatus.appendChild(statusBadge);
 
         const tdActions = document.createElement('td');
@@ -960,6 +1049,7 @@ const App = {
 
     } catch (err) {
       console.error('Error rendering admin:', err);
+      this.setFeedback('admin-feedback', `Não foi possível carregar a administração: ${err.message}`);
     }
   },
 
@@ -1021,9 +1111,34 @@ const App = {
   // -------------------------------------------------------------
   // ADMIN MODAL HANDLERS
   // -------------------------------------------------------------
+  populateVehicleStatusOptions(currentStatus) {
+    const select = document.getElementById('vehicle-status');
+    select.replaceChildren();
+    const options = ['disponivel', 'manutencao', 'indisponivel'];
+    // Em Trânsito is set by exits; it is only kept as an option for vehicles already in that state
+    if (currentStatus === 'em_uso') options.unshift('em_uso');
+    options.forEach(value => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = this.STATUS_LABELS[value];
+      select.appendChild(opt);
+    });
+
+    const hint = document.getElementById('vehicle-status-hint');
+    hint.textContent = currentStatus === 'indisponivel'
+      ? 'Para remover o bloqueio, escolha Disponível ou Em manutenção.'
+      : 'Indisponível bloqueia novas saídas por motivo diferente de manutenção.';
+  },
+
+  updateVehicleReasonVisibility() {
+    const isUnavailable = document.getElementById('vehicle-status').value === 'indisponivel';
+    document.getElementById('vehicle-reason-group').style.display = isUnavailable ? 'block' : 'none';
+  },
+
   openVehicleModal(vehicle = null) {
     const title = document.getElementById('modal-vehicle-title');
     const editId = document.getElementById('vehicle-edit-id');
+    this.populateVehicleStatusOptions(vehicle ? vehicle.status : null);
 
     if (vehicle) {
       title.textContent = `🚗 Editar Veículo #${vehicle.id}`;
@@ -1041,12 +1156,14 @@ const App = {
       document.getElementById('vehicle-renavam').value = vehicle.renavam || '';
       document.getElementById('vehicle-chassis').value = vehicle.chassis || '';
       document.getElementById('vehicle-status').value = vehicle.status;
+      document.getElementById('vehicle-unavailable-reason').value = vehicle.unavailable_reason || '';
     } else {
       title.textContent = '🚗 Cadastrar Novo Veículo';
       editId.value = '';
       document.getElementById('form-admin-vehicle').reset();
       document.getElementById('vehicle-status').value = 'disponivel';
     }
+    this.updateVehicleReasonVisibility();
     this.openModal('modal-admin-vehicle');
   },
 
@@ -1067,6 +1184,9 @@ const App = {
       chassis: document.getElementById('vehicle-chassis').value.trim() || null,
       status: document.getElementById('vehicle-status').value
     };
+    data.unavailable_reason = data.status === 'indisponivel'
+      ? (document.getElementById('vehicle-unavailable-reason').value.trim() || null)
+      : null;
 
     try {
       if (editId) {

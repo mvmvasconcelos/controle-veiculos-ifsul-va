@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Controle de Veículos IFSul - Venâncio Aires</title>
   <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=1.1.0">
 </head>
 <body>
 
@@ -30,70 +30,93 @@
     <div id="toast-container" class="toast-container"></div>
 
     <!-- TAB 1: DASHBOARD PÚBLICO -->
-    <section id="tab-dashboard" class="tab-content">
-      <div class="section-title">
-        <span>📊 Status dos Veículos em Tempo Real</span>
+    <section id="tab-dashboard" class="tab-content" aria-labelledby="dashboard-heading">
+      <div class="page-hero">
+        <h1 id="dashboard-heading" class="page-title">Frota do Câmpus</h1>
+        <p class="page-subtitle">Situação dos veículos oficiais em tempo real.</p>
       </div>
+
+      <div id="dashboard-feedback" class="feedback" role="status" aria-live="polite"></div>
 
       <div class="metrics-grid">
         <div class="metric-card">
-          <div id="metric-total" class="metric-value">5</div>
-          <div class="metric-label">Veículos Oficiais</div>
+          <div id="metric-total" class="metric-value">-</div>
+          <div class="metric-label">Veículos oficiais</div>
         </div>
         <div class="metric-card metric-available">
-          <div id="metric-available" class="metric-value">5</div>
+          <div id="metric-available" class="metric-value">-</div>
           <div class="metric-label">Disponíveis</div>
         </div>
         <div class="metric-card metric-inuse">
-          <div id="metric-inuse" class="metric-value">0</div>
+          <div id="metric-inuse" class="metric-value">-</div>
           <div class="metric-label">Em Trânsito</div>
         </div>
-        <div class="metric-card">
-          <div id="metric-maintenance" class="metric-value">0</div>
-          <div class="metric-label">Manutenção</div>
+        <div class="metric-card metric-unavailable">
+          <div id="metric-unavailable" class="metric-value">-</div>
+          <div class="metric-label">Indisponíveis</div>
+        </div>
+        <div class="metric-card metric-maintenance">
+          <div id="metric-maintenance" class="metric-value">-</div>
+          <div class="metric-label">Em manutenção</div>
         </div>
       </div>
 
-      <div class="section-title">
-        <span>🚗 Frota de Veículos</span>
-      </div>
+      <h2 class="section-title">Movimentações em andamento</h2>
+      <div id="dashboard-active-list" class="trip-list" aria-live="polite"></div>
 
+      <h2 class="section-title">Frota de veículos</h2>
       <div id="dashboard-vehicles-grid" class="vehicles-grid">
         <!-- Rendered dynamically -->
       </div>
 
-      <div class="section-title">
-        <span>📍 Destinos Mais Frequentes</span>
-      </div>
-      <div class="table-container" style="padding: 16px; margin-bottom: 24px;">
-        <ul id="dashboard-destinations" style="list-style: none;">
+      <h2 class="section-title">Destinos mais frequentes</h2>
+      <div class="panel">
+        <ul id="dashboard-destinations" class="plain-list">
           <!-- Rendered dynamically -->
         </ul>
       </div>
     </section>
 
     <!-- TAB 2: PORTARIA / VIGILANTE -->
-    <section id="tab-portaria" class="tab-content" style="display: none;">
-      <div class="section-title">
-        <span>👮 Painel da Portaria - Registros</span>
+    <section id="tab-portaria" class="tab-content" style="display: none;" aria-labelledby="portaria-heading">
+      <div class="page-hero">
+        <h1 id="portaria-heading" class="page-title">Portaria</h1>
+        <p class="page-subtitle">Busque o veículo para registrar a saída ou registre o retorno de quem já saiu.</p>
       </div>
 
-      <div id="portaria-vehicles-grid" class="vehicles-grid">
+      <div id="portaria-feedback" class="feedback" role="status" aria-live="polite"></div>
+
+      <h2 class="section-title">Registrar saída</h2>
+      <div class="search-box">
+        <label for="portaria-search" class="form-label">Buscar veículo por nome, placa ou modelo</label>
+        <input type="search" id="portaria-search" class="form-input" placeholder="Ex.: Corolla ou IQK5148" autocomplete="off">
+      </div>
+      <div id="portaria-vehicles-grid" class="vehicle-options">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <h2 class="section-title">Retornos pendentes</h2>
+      <div id="portaria-returns-list" class="trip-list">
         <!-- Rendered dynamically -->
       </div>
     </section>
 
     <!-- TAB 3: PAINEL ADMIN -->
     <section id="tab-admin" class="tab-content" style="display: none;">
-      <div class="section-title">
-        <span>⚙️ Painel de Administração</span>
-        <button id="btn-export-csv" class="btn btn-primary" style="width: auto; min-height: 40px; padding: 6px 14px; font-size: 0.85rem;">
+      <div class="page-hero page-hero-row">
+        <div>
+          <h1 class="page-title">Administração</h1>
+          <p class="page-subtitle">Veículos, motoristas, usuários, histórico e auditoria.</p>
+        </div>
+        <button id="btn-export-csv" class="btn btn-primary btn-inline">
           📥 Baixar Relatório (CSV)
         </button>
       </div>
 
+      <div id="admin-feedback" class="feedback" role="status" aria-live="polite"></div>
+
       <!-- Admin Sub-Navigation -->
-      <div class="admin-subnav" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; overflow-x: auto;">
+      <div class="admin-subnav">
         <button class="btn-subnav active" data-subtab="vehicles">🚗 Veículos</button>
         <button class="btn-subnav" data-subtab="drivers">👤 Motoristas</button>
         <button class="btn-subnav" data-subtab="users">🔑 Usuários</button>
@@ -455,11 +478,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">Status Inicial / Atual</label>
-          <select id="vehicle-status" class="form-select">
-            <option value="disponivel">🟢 Disponível</option>
-            <option value="em_uso">🔴 Em Trânsito</option>
-            <option value="manutencao">🔧 Manutenção</option>
-          </select>
+          <select id="vehicle-status" class="form-select"></select>
+          <div id="vehicle-status-hint" class="form-hint"></div>
+        </div>
+        <div id="vehicle-reason-group" class="form-group" style="display: none;">
+          <label class="form-label" for="vehicle-unavailable-reason">Motivo da indisponibilidade (Opcional)</label>
+          <input type="text" id="vehicle-unavailable-reason" class="form-input" maxlength="200" placeholder="ex: Reservado para evento">
+          <div class="form-hint">Visível apenas para a Portaria. Não aparece no Dashboard público.</div>
         </div>
         <button type="submit" class="btn btn-primary">Salvar Veículo</button>
       </form>
@@ -577,8 +602,8 @@
         <div class="form-group">
           <label class="form-label">Status da Movimentação</label>
           <select id="movement-status" class="form-select">
-            <option value="em_transito">🔴 Em Trânsito</option>
-            <option value="concluido">🟢 Concluído</option>
+            <option value="em_transito">Em Trânsito</option>
+            <option value="concluido">Concluído</option>
           </select>
         </div>
 
@@ -593,7 +618,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/api.js?v=1.0.1"></script>
-  <script src="js/app.js?v=1.0.1"></script>
+  <script src="js/api.js?v=1.1.0"></script>
+  <script src="js/app.js?v=1.1.0"></script>
 </body>
 </html>

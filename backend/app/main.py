@@ -6,12 +6,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, engine, ensure_schema
 from app.api import auth, vehicles, drivers, movements, dashboard, users, reports, audit_logs
 from seed import seed
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
+ensure_schema(engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

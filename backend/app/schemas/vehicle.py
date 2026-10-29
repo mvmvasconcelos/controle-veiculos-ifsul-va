@@ -1,7 +1,17 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime
 from typing import Optional
-from app.models.vehicle import VehicleStatus
+from app.models.vehicle import VehicleStatus, UNAVAILABLE_REASON_MAX_LENGTH
+
+def _normalize_reason(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if len(value) > UNAVAILABLE_REASON_MAX_LENGTH:
+        raise ValueError(f"O motivo deve ter no máximo {UNAVAILABLE_REASON_MAX_LENGTH} caracteres")
+    return value
 
 class VehicleBase(BaseModel):
     display_name: str
@@ -19,7 +29,9 @@ class VehicleBase(BaseModel):
     status: VehicleStatus = VehicleStatus.DISPONIVEL
 
 class VehicleCreate(VehicleBase):
-    pass
+    unavailable_reason: Optional[str] = None
+
+    _check_reason = field_validator("unavailable_reason")(_normalize_reason)
 
 class VehicleUpdate(BaseModel):
     display_name: Optional[str] = None
@@ -35,8 +47,16 @@ class VehicleUpdate(BaseModel):
     renavam: Optional[str] = None
     chassis: Optional[str] = None
     status: Optional[VehicleStatus] = None
+    unavailable_reason: Optional[str] = None
+
+    _check_reason = field_validator("unavailable_reason")(_normalize_reason)
 
 class VehicleOut(VehicleBase):
+    """Public representation: never exposes the unavailability reason."""
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
+
+class VehicleStaffOut(VehicleOut):
+    """Representation for authenticated Portaria/ADMIN users."""
+    unavailable_reason: Optional[str] = None

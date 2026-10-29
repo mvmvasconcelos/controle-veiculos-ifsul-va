@@ -8,6 +8,7 @@
   --ifsul-red-bg: #ffebee;
   --ifsul-amber: #d97706;
   --ifsul-amber-bg: #fef3c7;
+  --slate: #64748b;
   --bg-color: #f4f6f8;
   --card-bg: #ffffff;
   --text-main: #1f2937;
@@ -179,7 +180,17 @@ body {
 
 @media (min-width: 640px) {
   .metrics-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.metrics-grid .metric-card:first-child {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .metrics-grid .metric-card:first-child {
+    grid-column: auto;
   }
 }
 
@@ -252,6 +263,10 @@ body {
   border-left: 5px solid var(--ifsul-amber);
 }
 
+.vehicle-card.status-indisponivel {
+  border-left: 5px solid var(--slate);
+}
+
 .vehicle-header {
   display: flex;
   justify-content: space-between;
@@ -299,7 +314,22 @@ body {
 
 .badge-manutencao {
   background: var(--ifsul-amber-bg);
-  color: var(--ifsul-amber);
+  color: #92400e;
+}
+
+.badge-indisponivel {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.badge-concluido {
+  background: var(--ifsul-green-bg);
+  color: var(--ifsul-green-dark);
+}
+
+.badge-em_transito {
+  background: var(--ifsul-red-bg);
+  color: var(--ifsul-red);
 }
 
 .vehicle-details {
@@ -599,3 +629,270 @@ body {
   cursor: not-allowed;
 }
 
+
+/* ---------- Redesign: layout, feedback and lists ---------- */
+.page-hero {
+  background: linear-gradient(135deg, var(--ifsul-green) 0%, var(--ifsul-green-light) 100%);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.page-hero-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .page-hero-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.92;
+  margin-top: 4px;
+}
+
+.section-title {
+  margin-top: 8px;
+}
+
+.btn-inline {
+  width: auto;
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--ifsul-green-dark);
+}
+
+.btn-inline:hover {
+  background: var(--ifsul-green-bg);
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible, .btn-subnav:focus-visible, .nav-item:focus-visible, .btn-pagination:focus-visible {
+  outline: 3px solid rgba(0, 102, 51, 0.45);
+  outline-offset: 2px;
+}
+
+.admin-subnav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.plain-list {
+  list-style: none;
+}
+
+.plain-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.plain-list li:last-child {
+  border-bottom: none;
+}
+
+.feedback:empty {
+  display: none;
+}
+
+.feedback .state-box {
+  margin-bottom: 16px;
+}
+
+.state-box {
+  background: var(--card-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.state-box.state-error {
+  border: 1px solid var(--ifsul-red);
+  background: var(--ifsul-red-bg);
+  color: var(--ifsul-red);
+  font-weight: 600;
+}
+
+.state-box .btn {
+  width: auto;
+  margin-top: 10px;
+  min-height: 36px;
+}
+
+.search-box {
+  margin-bottom: 12px;
+}
+
+.vehicle-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .vehicle-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.vehicle-option {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--ifsul-green);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.vehicle-option.is-disabled {
+  background: #f8fafc;
+  border-left-color: var(--slate);
+}
+
+.vehicle-option.status-manutencao { border-left-color: var(--ifsul-amber); }
+.vehicle-option.status-em_uso { border-left-color: var(--ifsul-red); }
+
+.vehicle-option-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vehicle-option-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.trip-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .trip-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.trip-list .state-box {
+  grid-column: 1 / -1;
+}
+
+.trip-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--ifsul-red);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.trip-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.trip-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trip-meta strong {
+  color: var(--text-main);
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.metric-unavailable .metric-value { color: var(--slate); }
+.metric-maintenance .metric-value { color: var(--ifsul-amber); }
+
+.reason-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (min-width: 900px) {
+  .container {
+    max-width: 1100px;
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header { gap: 8px; padding: 10px 12px; }
+  .brand-container { gap: 8px; min-width: 0; }
+  .brand-logo { height: 34px; }
+  .brand-title { font-size: 0.95rem; }
+  .brand-subtitle { display: none; }
+  .user-status-badge { font-size: 0.7rem; padding: 4px 8px; text-align: center; }
+}

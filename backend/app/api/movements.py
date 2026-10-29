@@ -9,6 +9,7 @@ from app.models.driver import Driver
 from app.schemas.movement import MovementOut, MovementExitCreate, MovementReturnCreate, MovementUpdate
 from app.api.deps import get_current_portaria_user, get_current_admin_user
 from app.models.user import User
+from app.core.vehicle_state import has_active_movement, apply_movement_closed, apply_movement_open, apply_movement_removed
 
 router = APIRouter()
 
@@ -47,6 +48,9 @@ def record_exit(
             detail=f"Veículo '{vehicle.display_name}' não está disponível para saída (Status atual: {vehicle.status.value})"
         )
         
+    if has_active_movement(db, vehicle.id):
+        raise HTTPException(status_code=400, detail=f"Veículo '{vehicle.display_name}' já possui uma movimentação em andamento")
+
     driver = db.query(Driver).filter(Driver.id == exit_in.driver_id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Motorista não encontrado")
@@ -105,7 +109,7 @@ def record_return(
         
     # Update vehicle
     if vehicle:
-        vehicle.status = VehicleStatus.DISPONIVEL
+        apply_movement_closed(vehicle)
         vehicle.current_odometer = return_in.return_odometer
         
     db.commit()
@@ -132,11 +136,11 @@ def update_movement(
     vehicle = db.query(Vehicle).filter(Vehicle.id == movement.vehicle_id).first()
     if vehicle:
         if movement.status == MovementStatus.CONCLUIDO and movement.return_odometer:
-            vehicle.status = VehicleStatus.DISPONIVEL
+            apply_movement_closed(vehicle)
             if movement.return_odometer > vehicle.current_odometer:
                 vehicle.current_odometer = movement.return_odometer
         elif movement.status == MovementStatus.EM_TRANSITO:
-            vehicle.status = VehicleStatus.EM_USO
+            apply_movement_open(vehicle)
             
     db.commit()
     db.refresh(movement)
@@ -154,7 +158,7 @@ def delete_movement(
         
     vehicle = db.query(Vehicle).filter(Vehicle.id == movement.vehicle_id).first()
     if vehicle and movement.status == MovementStatus.EM_TRANSITO:
-        vehicle.status = VehicleStatus.DISPONIVEL
+        apply_movement_removed(vehicle)
         
     db.delete(movement)
     db.commit()

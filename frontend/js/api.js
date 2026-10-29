@@ -96,6 +96,10 @@ const API = {
     return await this.request('/vehicles');
   },
 
+  async getStaffVehicles() {
+    return await this.request('/vehicles/staff');
+  },
+
   async createVehicle(data) {
     return await this.request('/vehicles', { method: 'POST', body: data });
   },

@@ -7,7 +7,7 @@ Sistema desenvolvido para substituir o registro manual em papel e planilhas na p
 ## Funcionalidades Principais
 
 ### Dashboard Público
-- Exibe o status da frota em tempo real (Disponível, Em Trânsito ou Manutenção).
+- Exibe o status da frota em tempo real (Disponível, Em Trânsito, Indisponível ou Em manutenção), sem expor o motivo de indisponibilidade.
 - Mostra quais veículos estão fora do câmpus, com informações sobre o motorista, destino e horário de saída.
 - Lista os destinos mais frequentes e estatísticas gerais da frota sem exigir autenticação.
 
@@ -20,7 +20,7 @@ Sistema desenvolvido para substituir o registro manual em papel e planilhas na p
 ### Painel Administrativo
 - Controle de acesso por permissões (Administrador vs Portaria).
 - Gerenciamento completo (cadastro, edição e exclusão) de veículos, motoristas e usuários.
-- Alteração do status de manutenção dos veículos.
+- Alteração do estado dos veículos (Disponível, Em manutenção ou Indisponível, com motivo opcional visível só à Portaria).
 - Histórico completo de movimentações com exportação dos dados em formato CSV.
 
 ---

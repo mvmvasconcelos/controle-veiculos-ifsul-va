@@ -7,6 +7,9 @@ class VehicleStatus(str, enum.Enum):
     DISPONIVEL = "disponivel"
     EM_USO = "em_uso"
     MANUTENCAO = "manutencao"
+    INDISPONIVEL = "indisponivel"
+
+UNAVAILABLE_REASON_MAX_LENGTH = 200
 
 class Vehicle(Base):
     __tablename__ = "vehicles"
@@ -25,4 +28,5 @@ class Vehicle(Base):
     renavam = Column(String, nullable=True)
     chassis = Column(String, nullable=True)
     status = Column(Enum(VehicleStatus), default=VehicleStatus.DISPONIVEL, nullable=False)
+    unavailable_reason = Column(String(UNAVAILABLE_REASON_MAX_LENGTH), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

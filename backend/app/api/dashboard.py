@@ -16,7 +16,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
     
     total_vehicles = len(vehicles)
     available_count = sum(1 for v in vehicles if v.status == VehicleStatus.DISPONIVEL)
-    in_use_count = sum(1 for v in vehicles if v.status == VehicleStatus.EM_USO)
+    unavailable_count = sum(1 for v in vehicles if v.status == VehicleStatus.INDISPONIVEL)
     maintenance_count = sum(1 for v in vehicles if v.status == VehicleStatus.MANUTENCAO)
     
     # Active movements (currently out)
@@ -27,6 +27,9 @@ def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
         .all()
     )
     
+    # In transit describes open movements, independent of the vehicle's state for next exits
+    in_use_count = len(active_movements)
+
     # Common destinations (top 5)
     common_destinations = (
         db.query(Movement.destination, func.count(Movement.id).label("count"))
@@ -52,6 +55,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)) -> Dict[str, Any]:
             "available_count": available_count,
             "in_use_count": in_use_count,
             "maintenance_count": maintenance_count,
+            "unavailable_count": unavailable_count,
         },
         "vehicles": [VehicleOut.model_validate(v) for v in vehicles],
         "active_movements": [MovementOut.model_validate(m) for m in active_movements],
