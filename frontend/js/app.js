@@ -535,7 +535,7 @@ const App = {
     }
   },
 
-  // Card for an open movement; used by the public dashboard and the Portaria return queue
+  // Card for an open movement; used by the public dashboard
   createTripCard(movement, { vehicle, onReturn = null }) {
     const card = document.createElement('div');
     card.className = 'trip-card';
@@ -602,7 +602,6 @@ const App = {
 
     this.setFeedback('portaria-feedback');
     this.renderPortariaVehicles();
-    this.renderPortariaReturns();
   },
 
   renderPortariaVehicles() {
@@ -610,7 +609,7 @@ const App = {
     container.replaceChildren();
 
     const term = document.getElementById('portaria-search').value.trim().toLowerCase();
-    const matches = this.vehicles.filter(v =>
+    const matches = PortariaVehicleState.sortPortariaVehicles(this.vehicles, this.activeMovementsMap).filter(v =>
       !term || `${v.display_name} ${v.plate} ${v.make} ${v.model}`.toLowerCase().includes(term)
     );
 
@@ -625,24 +624,26 @@ const App = {
         Boolean(this.activeMovementsMap[v.id])
       );
       const canExit = state.canStartMovement;
+      const trip = this.activeMovementsMap[v.id];
       const card = document.createElement('div');
-      card.className = `vehicle-option status-${v.status}${canExit ? '' : ' is-disabled'}`;
+      card.className = `vehicle-option status-${v.status}${trip ? ' status-em_uso' : ''}${canExit ? '' : ' is-disabled'}`;
 
       const head = document.createElement('div');
       head.className = 'vehicle-option-head';
-      head.appendChild(this.createVehicleTitle(v));
-      head.appendChild(this.createStatusBadge(v.status));
-      if (state.showTransitBadge) {
-        head.appendChild(this.createStatusBadge('em_uso'));
-      }
+      const title = document.createElement('div');
+      title.className = 'vehicle-title';
+      title.textContent = v.display_name;
+      head.appendChild(title);
+      head.appendChild(this.createVehicleBadges(v, trip));
       card.appendChild(head);
 
-      const meta = document.createElement('div');
-      meta.className = 'vehicle-option-note';
-      meta.textContent = `${v.type} • ${v.current_odometer.toLocaleString()} km`;
-      card.appendChild(meta);
-
-      if (v.status === 'indisponivel' && v.unavailable_reason) {
+      if (trip) {
+        const tripInfo = document.createElement('div');
+        tripInfo.className = 'vehicle-option-note';
+        const driverName = trip.driver ? `${trip.driver.name} • ` : '';
+        tripInfo.textContent = `${driverName}Saída ${new Date(trip.departure_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`;
+        card.appendChild(tripInfo);
+      } else if (v.status === 'indisponivel' && v.unavailable_reason) {
         const reason = document.createElement('div');
         reason.className = 'vehicle-option-note';
         reason.textContent = `Motivo: ${v.unavailable_reason}`;
@@ -655,30 +656,17 @@ const App = {
       if (canExit) {
         btn.textContent = '🚀 Registrar Saída';
         btn.addEventListener('click', () => this.openExitModal(v));
+      } else if (trip) {
+        btn.className = 'btn btn-danger';
+        btn.textContent = '🏁 Registrar Retorno';
+        btn.addEventListener('click', () => this.openReturnModal(v, trip));
       } else {
         btn.disabled = true;
         btn.className = 'btn btn-secondary';
-        btn.textContent = `${this.STATUS_LABELS[v.status]} - saída bloqueada`;
+        btn.textContent = 'Saída bloqueada';
       }
       card.appendChild(btn);
       container.appendChild(card);
-    });
-  },
-
-  renderPortariaReturns() {
-    const list = document.getElementById('portaria-returns-list');
-    list.replaceChildren();
-
-    const trips = Object.values(this.activeMovementsMap)
-      .sort((a, b) => new Date(b.departure_time) - new Date(a.departure_time));
-    if (trips.length === 0) {
-      list.appendChild(this.createStateBox('Nenhum retorno pendente.'));
-      return;
-    }
-
-    trips.forEach(m => {
-      const vehicle = this.vehicles.find(v => v.id === m.vehicle_id) || m.vehicle;
-      list.appendChild(this.createTripCard(m, { vehicle, onReturn: () => this.openReturnModal(vehicle, m) }));
     });
   },
 
